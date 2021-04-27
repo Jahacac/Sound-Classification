@@ -66,12 +66,25 @@ def get_dataset_sound_filenames(dataset_path):
     return sound_paths
 
 
-# extract labels from sound paths and return list of (sound_path, label)
-def attach_labels_to_sound_paths(sound_paths):
+# extract label from sound path
+def get_label_from_sound_path(sound_path):
+    label = re.search(r'_(.*?).wav', sound_path).group(1)
+    return label
+
+
+# get dataset from dataset_path, returns List(dict(song_name, cepstrum_features, label))
+def get_dataset(dataset_path):
     result = []
-    for sound_path in sound_paths:
-        label = re.search(r'_(.*?).wav', sound_path).group(1)
-        result.append((sound_path, label))
+    sound_paths = get_dataset_sound_filenames(dataset_path)
+    labels = [get_label_from_sound_path(sound_path) for sound_path in sound_paths]
+    cepstrum_features = [get_cepstrum_features(sound_path) for sound_path in sound_paths]
+
+    for sound_path, label, cepstrum_feature in zip(sound_paths, labels, cepstrum_features):
+        result.append({
+            "sound_path": sound_path,
+            "label": label,
+            "cepstrum_feature": cepstrum_feature
+        })
     return result
 
 

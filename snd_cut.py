@@ -6,6 +6,7 @@ wav_path = 'data/original/wav'
 lab_path = 'data/original/lab'
 cut_path = 'data/cut'
 
+
 def snd_cut():
     # Delete folder containing sound cuts
     if os.path.exists(f'{cut_path}'):
@@ -26,6 +27,11 @@ def snd_cut():
             line_content = line.split(" ")
             start_time = int(int(line_content[0]) / 10**4)  # time is in microseconds*0.1, we convert this to miliseconds (required for AudioSegment)
             end_time = int(int(line_content[1]) / 10**4)
+
+            # if length is 0, then continue (we work with int, not float)
+            if start_time == end_time:
+                continue
+
             sound = line_content[2].replace(':', '-').replace('\n', '')  # Removing ':' and '/n' because we are saving files under sound names and they are invalid chars
 
             # cutting wav file
@@ -39,7 +45,7 @@ def snd_cut():
 
 # cut i sejvale cuttano orginizairano
 
-
+#snd_cut()
 # dohvatit train,test,validation .wav imena datoteka
 # dohvatit njihove cuts (.wav datoteka, label = sound)
 # .wav cuts pretvorit u kepstralne znacajke, resize na average shape
