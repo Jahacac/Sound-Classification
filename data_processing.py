@@ -1,6 +1,10 @@
 import numpy as np
 import os
 from snd_cut import cut_path
+import librosa
+import re
+import librosa.display
+import matplotlib.pyplot as plt
 
 train_file_path = 'data/train_set.txt'
 test_file_path = 'data/test_set.txt'
@@ -47,8 +51,9 @@ def split_and_write_dataset():
     train_dataset, test_dataset, validation_dataset = split_data()
     write_split_data(train_dataset, test_dataset, validation_dataset)
 
+
 # get sound file names within dataset
-def get_dataset_sound_filename(dataset_path):
+def get_dataset_sound_filenames(dataset_path):
     sound_paths = []
     dataset = open(dataset_path)
 
@@ -59,6 +64,32 @@ def get_dataset_sound_filename(dataset_path):
         for sound_path in os.scandir(f'{wav_folder_path}'):
             sound_paths.append(f'{wav_folder_path}/{sound_path.name}')
     return sound_paths
+
+
+# extract labels from sound paths and return list of (sound_path, label)
+def attach_labels_to_sound_paths(sound_paths):
+    result = []
+    for sound_path in sound_paths:
+        label = re.search(r'_(.*?).wav', sound_path).group(1)
+        result.append((sound_path, label))
+    return result
+
+
+# get cepstrum features from file at file_path
+def get_cepstrum_features(sound_path):
+    y, sr = librosa.load(sound_path)
+    result = librosa.feature.mfcc(y=y, sr=sr, n_fft=512)
+    # fig, ax = plt.subplots()
+    # img = librosa.display.specshow(result, x_axis='time', ax=ax)
+    # fig.colorbar(img, ax=ax)
+    # ax.set(title='MFCC')
+    # plt.show()
+    return result
+
+
+# paths = get_dataset_sound_filenames(validation_file_path)
+# label = attach_labels_to_sound_paths(paths)[0][0]
+# get_cepstrum_features(label)
 
 # path na dataset_folder
 # dohvatit sve njegove splittane glasove ->
