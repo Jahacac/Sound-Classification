@@ -2,10 +2,9 @@ from pydub import AudioSegment
 import os
 import shutil
 
-wav_path = 'data/original/wav'
-lab_path = 'data/original/lab'
-cut_path = 'data/cut'
-
+wav_path = os.path.join('data', 'original', 'wav')
+lab_path = os.path.join('data', 'original', 'lab')
+cut_path = os.path.join('data', 'cut')
 
 def snd_cut():
     # Delete folder containing sound cuts
@@ -36,16 +35,16 @@ def snd_cut():
 
             # cutting wav file
             wav_single_sound = wav[start_time:end_time]
-            if not os.path.exists(f'{cut_path}/{wav_file.name}'):
-                os.makedirs(f'{cut_path}/{wav_file.name}')
+            if not os.path.exists(os.path.join(cut_path, wav_file.name)):
+                os.makedirs(os.path.join(cut_path, wav_file.name))
             # saving sound in directory dedicated for his parent wav
             filename = f'{i:05d}_{sound}'
-            wav_single_sound.export(f'{cut_path}/{wav_file.name}/{filename}.wav', format="wav")
+            wav_single_sound.export(os.path.join(cut_path, wav_file.name, f'{filename}.wav'), format="wav")
         file.close()
 
 # cut i sejvale cuttano orginizairano
 
-#snd_cut()
+# snd_cut()
 # dohvatit train,test,validation .wav imena datoteka
 # dohvatit njihove cuts (.wav datoteka, label = sound)
 # .wav cuts pretvorit u kepstralne znacajke, resize na average shape

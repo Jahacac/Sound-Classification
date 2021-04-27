@@ -6,19 +6,18 @@ import re
 import librosa.display
 import matplotlib.pyplot as plt
 
-train_file_path = 'data/train_set.txt'
-test_file_path = 'data/test_set.txt'
-validation_file_path = 'data/validation_set.txt'
+train_file_path = os.path.join('data', 'train_set.txt')
+test_file_path = os.path.join('data', 'test_set.txt')
+validation_file_path = os.path.join('data', 'validation_set.txt')
 
 # For replication purposes
 np.random.seed(1)
-
 
 # split data into train, test, validation datasets
 def split_data():
     data = []
     for wav_folder in os.scandir(f'{cut_path}'):
-        data.append(f'{cut_path}/{os.path.basename(wav_folder.name)}')
+        data.append(os.path.join(cut_path, os.path.basename(wav_folder.name)))
     np.random.shuffle(data)  # shuffle data
     # determine train and test ending index in data
     train_index_end = int(len(data) * 0.8)
@@ -61,8 +60,8 @@ def get_dataset_sound_filenames(dataset_path):
     for i, wav_folder_path in enumerate(dataset):
         wav_folder_path = wav_folder_path.replace('\n', '')
         # get sounds from all .wav folders
-        for sound_path in os.scandir(f'{wav_folder_path}'):
-            sound_paths.append(f'{wav_folder_path}/{sound_path.name}')
+        for sound_path in os.scandir(os.path.join(wav_folder_path)):
+            sound_paths.append(os.path.join(wav_folder_path, sound_path.name))
     return sound_paths
 
 
