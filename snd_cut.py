@@ -1,5 +1,6 @@
 from pydub import AudioSegment
 import os
+import shutil
 
 wav_path = 'data/original/wav'
 lab_path = 'data/original/lab'
@@ -7,7 +8,7 @@ dest_path = 'data/cut'
 
 # Delete folder containing sound cuts
 if os.path.exists(f'{dest_path}'):
-    os.rmdir(f'{dest_path}')
+    shutil.rmtree(f'{dest_path}')
 
 os.makedirs(f'{dest_path}')
 
