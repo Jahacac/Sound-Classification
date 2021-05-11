@@ -28,8 +28,8 @@ def split_data():
         data.append(os.path.join(cut_path, os.path.basename(wav_folder.name)))
     np.random.shuffle(data)  # shuffle data
     # determine train and test ending index in data
-    train_index_end = int(len(data) * 0.2) # 0.8
-    test_index_end = int(len(data) * 0.2) + int(len(data) * 0.1) # 0.8
+    train_index_end = int(len(data) * 0.05) # 0.8
+    test_index_end = int(len(data) * 0.05) + int(len(data) * 0.05) # 0.8, 0.1
     # get train and test from data
     train = data[:train_index_end]
     test = data[train_index_end:test_index_end]

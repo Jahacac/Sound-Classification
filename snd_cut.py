@@ -26,12 +26,14 @@ def snd_cut():
 
         wav = AudioSegment.from_wav(wav_file)
         file = open(lab_file_name)
+        desired_duration = 2000  # desired duration, predefined in ms
         for i, line in enumerate(file):
             # lab file has start,end,sound. extracting this to cut wav files
             line_content = line.split(" ")
             start_time = int(int(line_content[
                                      0]) / 10 ** 4)  # time is in microseconds*0.1, we convert this to miliseconds (required for AudioSegment)
             end_time = int(int(line_content[1]) / 10 ** 4)
+            duration = end_time - start_time  # duration of audio file in ms
 
             # if length is 0, then continue (we work with int, not float)
             if start_time == end_time:
@@ -42,6 +44,13 @@ def snd_cut():
 
             # cutting wav file
             wav_single_sound = wav[start_time:end_time]
+            if duration > desired_duration:
+                end_time = start_time + desired_duration
+                duration = end_time - start_time
+
+            silence = AudioSegment.silent(duration=desired_duration - duration)
+            wav_single_sound = wav_single_sound + silence  # Adding silence after the audio
+
             if not os.path.exists(os.path.join(cut_path, wav_file.name)):
                 os.makedirs(os.path.join(cut_path, wav_file.name))
             # saving sound in directory dedicated for his parent wav
@@ -49,16 +58,4 @@ def snd_cut():
             wav_single_sound.export(os.path.join(cut_path, wav_file.name, f'{filename}.wav'), format="wav")
         file.close()
 
-
-
 # snd_cut()
-# dohvatit train,test,validation .wav imena datoteka
-# dohvatit njihove cuts (.wav datoteka, label = sound)
-# .wav cuts pretvorit u kepstralne znacajke, resize na average shape
-
-# cnn model, input shape je onaj gore
-# trenirat
-
-
-# open model
-# validiranje
