@@ -6,14 +6,12 @@ wav_path = os.path.join('data', 'original', 'wav')
 lab_path = os.path.join('data', 'original', 'lab')
 cut_path = os.path.join('data', 'cut')
 
-
 def snd_cut():
     # Delete folder containing sound cuts
     if os.path.exists(f'{cut_path}'):
         shutil.rmtree(f'{cut_path}')
 
     os.makedirs(f'{cut_path}')
-
     # Extract wav and lab files
     wav_files = os.scandir(f'{wav_path}')
 
@@ -23,10 +21,9 @@ def snd_cut():
         if not os.path.exists(lab_file_name):
             print(f'Lab file at {lab_file_name} not found!')
             continue
-
         wav = AudioSegment.from_wav(wav_file)
         file = open(lab_file_name)
-        desired_duration = 2000  # desired duration, predefined in ms
+        desired_duration = 240  # desired duration, predefined in ms (12 * 20ms)
         for i, line in enumerate(file):
             # lab file has start,end,sound. extracting this to cut wav files
             line_content = line.split(" ")
@@ -43,10 +40,10 @@ def snd_cut():
                                                               '')  # Removing ':' and '/n' because we are saving files under sound names and they are invalid chars
 
             # cutting wav file
-            wav_single_sound = wav[start_time:end_time]
             if duration > desired_duration:
                 end_time = start_time + desired_duration
                 duration = end_time - start_time
+            wav_single_sound = wav[start_time:end_time]
 
             silence = AudioSegment.silent(duration=desired_duration - duration)
             wav_single_sound = wav_single_sound + silence  # Adding silence after the audio
@@ -57,5 +54,6 @@ def snd_cut():
             filename = f'{i:05d}_{sound}'
             wav_single_sound.export(os.path.join(cut_path, wav_file.name, f'{filename}.wav'), format="wav")
         file.close()
+
 
 # snd_cut()
