@@ -1,10 +1,13 @@
 from pydub import AudioSegment
 import os
 import shutil
+import numpy as np
 
 wav_path = os.path.join('data', 'original', 'wav')
 lab_path = os.path.join('data', 'original', 'lab')
 cut_path = os.path.join('data', 'cut')
+sounds_to_ignore = ['buka', 'greska', 'uzdah']
+
 
 def snd_cut():
     # Delete folder containing sound cuts
@@ -14,6 +17,23 @@ def snd_cut():
     os.makedirs(f'{cut_path}')
     # Extract wav and lab files
     wav_files = os.scandir(f'{wav_path}')
+    desired_duration = 0
+
+    # calculate desired_duration based on average/max? sound lengths
+    for lab_file_name in os.scandir(lab_path):
+        file = open(lab_file_name)
+        durations = []  # durations of audio files (ms) in lab files
+        for line in file:
+            line_content = line.split(" ")
+            start_time = int(int(line_content[
+                                     0]) / 10 ** 4)  # time is in microseconds*0.1, we convert this to miliseconds (required for AudioSegment)
+            end_time = int(int(line_content[1]) / 10 ** 4)
+            durations.append(end_time - start_time)
+        file.close()
+
+    print(f'DURATIONS min:{np.min(durations)} max:{np.max(durations)} average:{np.average(durations)} median:{np.median(durations)}')
+    # DURATIONS min:24 max:376 average:69.76744186046511 median:56.0
+    desired_duration = np.round(np.average(durations))
 
     # extracting sounds from .wav files
     for wav_file in wav_files:
@@ -21,9 +41,9 @@ def snd_cut():
         if not os.path.exists(lab_file_name):
             print(f'Lab file at {lab_file_name} not found!')
             continue
+
         wav = AudioSegment.from_wav(wav_file)
         file = open(lab_file_name)
-        desired_duration = 240  # desired duration, predefined in ms (12 * 20ms)
         for i, line in enumerate(file):
             # lab file has start,end,sound. extracting this to cut wav files
             line_content = line.split(" ")
@@ -36,8 +56,11 @@ def snd_cut():
             if start_time == end_time:
                 continue
 
-            sound = line_content[2].replace(':', '-').replace('\n',
-                                                              '')  # Removing ':' and '/n' because we are saving files under sound names and they are invalid chars
+            sound = line_content[2].replace(':', '-').replace('\n', '')  # Removing ':' and '/n' because we are saving files under sound names and they are invalid chars
+
+            if sound in sounds_to_ignore:
+                # print(f'Ignoring sound {sound} from {lab_file_name}!')
+                continue
 
             # cutting wav file
             if duration > desired_duration:

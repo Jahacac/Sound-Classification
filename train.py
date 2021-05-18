@@ -8,26 +8,20 @@ from tensorflow.keras import layers
 from tensorflow.keras import models
 import math
 from keras.utils import to_categorical
-from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
 from sklearn.metrics import classification_report
 
-if not os.path.exists(f'{dp.train_file_path_txt}') or not os.path.exists(f'{dp.test_file_path_txt}'):
+if not os.path.exists(f'{dp.train_file_path_txt}') or not os.path.exists(f'{dp.test_file_path_txt}') or not os.path.exists(f'{dp.validation_dataset_path_json}'):
     dp.split_and_write_dataset_paths()
 
 if not os.path.exists(f'{dp.train_dataset_path_json}') or not os.path.exists(f'{dp.test_dataset_path_json}') or not os.path.exists(f'{dp.validation_dataset_path_json}'):
     dp.write_datasets_to_json()
 
-def extract_labels_for_model(data):
-    # cepstrum features
-    pass
-
-
-# Extract cepstrum features and their shape
-def extract_cepstrum_features_for_model(data):
-    # cepstrum features
-    pass
+model_feature: dp.Feature = dp.Feature.Spectrogram # choose whether to train model with Cepstrum features or Spectrograms
+model_name = "Spectrogram" if model_feature == dp.Feature.Spectrogram else "Cepstrum"
+feature_key = "spectrogram" if model_feature == dp.Feature.Spectrogram else "cepstrum_feature"
 
 
 # Function for shaping labels to contain value
@@ -51,18 +45,21 @@ def prep_submissions(preds_array):
 
 # function to draw confusion matrix
 def draw_confusion_matrix(true, preds, labels):
+    title = f"{model_name} - Confusion Matrix"
     plt.figure(figsize=(20, 20))
     conf_matx = confusion_matrix(true, preds)
     sns.heatmap(conf_matx, annot=True, annot_kws={"size": 12}, fmt='g', cbar=False, cmap="viridis", xticklabels=labels, yticklabels=labels)
     plt.xlabel('Prediction')
     plt.ylabel('Label')
+    plt.title(title, fontdict={"fontsize": 36})
+    plt.savefig(os.path.join(dp.image_path, title))
     plt.show()
 
 
 def main():
-    train = dp.load_dataset_from_json(dp.train_dataset_path_json)
-    test = dp.load_dataset_from_json(dp.test_dataset_path_json)
-    validation = dp.load_dataset_from_json(dp.validation_dataset_path_json)
+    train = dp.load_dataset_from_json(dp.train_dataset_path_json, model_feature)
+    test = dp.load_dataset_from_json(dp.test_dataset_path_json, model_feature)
+    validation = dp.load_dataset_from_json(dp.validation_dataset_path_json, model_feature)
 
     shape_x = []
     shape_y = []
@@ -70,12 +67,12 @@ def main():
 
     # Getting shapes and labels from train data
     for data in train:
-        shape_x.append(len(data["cepstrum_feature"]))
-        shape_y.append(len(data["cepstrum_feature"][0]))
+        shape_x.append(len(data[feature_key]))
+        shape_y.append(len(data[feature_key][0]))
         labels.append(data["label"])
 
     # Extracting all distinct labels
-    labels = list(set(labels))
+    labels = sorted(list(set(labels)))
 
     print(f'ROWS min:{np.min(shape_x)} max:{np.max(shape_x)} average:{np.average(shape_x)}')
     print(f'COLUMN min:{np.min(shape_y)} max:{np.max(shape_y)} average:{np.average(shape_y)}')
@@ -97,12 +94,12 @@ def main():
                       activation='relu',
                       padding='same'),
         layers.MaxPooling2D(),
-        layers.Dropout(0.25),
+        layers.Dropout(0.2),
         layers.Flatten(),
         layers.Dense(512, activation='relu'),
-        layers.Dropout(0.5),
-        layers.Dense(248, activation='relu'),  # none
-        layers.Dropout(0.1),  # 0.3
+        layers.Dropout(0.35),
+        layers.Dense(248, activation='relu'),
+        layers.Dropout(0.1),
         layers.Dense(len(labels), activation='softmax')
     ])
     model.summary()
@@ -118,19 +115,19 @@ def main():
     validation_labels = []
 
     for data in train:
-        cepstrum_features = data["cepstrum_feature"]
+        cepstrum_features = data[feature_key]
         cepstrum_features = np.array(cepstrum_features)
         train_data.append(cepstrum_features)
         train_labels.append(data["label"])
 
     for data in test:
-        cepstrum_features = data["cepstrum_feature"]
+        cepstrum_features = data[feature_key]
         cepstrum_features = np.array(cepstrum_features)
         test_data.append(cepstrum_features)
         test_labels.append(data["label"])
 
     for data in validation:
-        cepstrum_features = data["cepstrum_feature"]
+        cepstrum_features = data[feature_key]
         cepstrum_features = np.array(cepstrum_features)
         validation_data.append(cepstrum_features)
         validation_labels.append(data["label"])
@@ -153,29 +150,42 @@ def main():
     test_labels = to_categorical(test_labels, len(labels))
     validation_labels = to_categorical(validation_labels, len(labels))
 
+    # set early stopping criteria
+    pat = 2  # this is the number of epochs with no improvment after which the training will stop
+    early_stopping = EarlyStopping(monitor='val_loss', patience=pat, verbose=1)
+
+    # define the model checkpoint callback -> this will keep on saving the model as a physical file
+    model_checkpoint = ModelCheckpoint(f'{os.path.join(dp.trained_model_path, model_name)}.h5', verbose=1, save_best_only=True)
+
     # Training model
-    EPOCHS = 15
+    epochs = 15
     history = model.fit(train_data,
                         train_labels,
                         batch_size=80,
                         validation_data=(test_data, test_labels),
-                        epochs=EPOCHS,
-                        callbacks=EarlyStopping(verbose=1, patience=2),
+                        epochs=epochs,
+                        callbacks=[early_stopping, model_checkpoint],
                         verbose=1)
 
     # Evaluate model
     print("Val Score: ", model.evaluate(test_data, test_labels))
 
     # Plot model training history (loss, val_loss)
+    title = f"{model_name} - Training History (Loss)"
     metrics = history.history
     plt.plot(history.epoch, metrics['loss'], metrics['val_loss'])
-    plt.legend(['loss', 'val_loss'])
+    plt.title(title)
+    plt.legend(['Loss', 'Validation Loss'])
+    plt.savefig(os.path.join(dp.image_path, title))
     plt.show()
 
     # Plot model training history (acc, val_acc)
     plt.figure()
+    title = f"{model_name} - Training History (Accuracy)"
     plt.plot(history.epoch, metrics['acc'], metrics['val_acc'])
-    plt.legend(['accuracy', 'val_accuracy'])
+    plt.title(title)
+    plt.legend(['Accuracy', 'Validation Accuracy'])
+    plt.savefig(os.path.join(dp.image_path, title))
     plt.show()
 
     # Preparing data for Classification report / Confusion matrix
