@@ -20,6 +20,9 @@ train_file_path_txt = os.path.join('data', 'train_set.txt')
 test_file_path_txt = os.path.join('data', 'test_set.txt')
 validation_file_path_txt = os.path.join('data', 'validation_set.txt')
 
+# txt file that contains all labels
+labels_path_txt = os.path.join('data', 'labels.txt')
+
 # files that contain dataset values
 train_dataset_path_json = os.path.join('data', 'train_dataset.json')
 test_dataset_path_json = os.path.join('data', 'test_dataset.json')
@@ -161,6 +164,21 @@ def write_datasets_to_json():
     validation_dataset_file.close()
     print('validation_dataset_file finished!')
 
+    # extract all labels and write distinct values
+    labels = []
+    for data in train_data:
+        labels.append(data["label"])
+    for data in test_data:
+        labels.append(data["label"])
+    for data in validation_data:
+        labels.append(data["label"])
+
+    labels_file = open(labels_path_txt, 'w')
+    labels = sorted(list(set(labels)))  # select distinct labels
+    labels_file.writelines("\n".join(labels))
+    labels_file.close()
+    print('labels_file finished!')
+
 
 # load dataset and return dataset values
 def load_dataset_from_json(dataset_path, model_feature: Feature):
@@ -175,16 +193,3 @@ def load_dataset_from_json(dataset_path, model_feature: Feature):
     return json_data
 
 # write_datasets_to_json()
-# load_dataset_from_json('test_dataset.json')
-
-# paths = get_dataset_sound_filenames(validation_file_path)
-# label = attach_labels_to_sound_paths(paths)[0][0]
-# get_cepstrum_features(label)
-
-# path na dataset_folder
-# dohvatit sve njegove splittane glasove ->
-
-
-# dohvatit train,test,validation .wav imena datoteka
-# dohvatit njihove cuts (.wav datoteka, label = sound)
-# .wav cuts pretvorit u kepstralne znacajke, resize na average shape
