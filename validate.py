@@ -66,4 +66,4 @@ def validate_model(model_filename):
     draw_confusion_matrix(validation_labels, validation_preds_labels, labels)
 
 
-validate_model(tr.model_name)
+#validate_model(tr.model_name)
