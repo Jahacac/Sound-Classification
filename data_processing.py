@@ -17,7 +17,7 @@ class Feature(Enum):
 
 
 # Data distribution enumerator
-class Dataset_distribution(Enum):
+class DatasetDistribution(Enum):
     Balanced = 1
     Imbalanced = 2
 
@@ -45,17 +45,25 @@ np.random.seed(RANDOM_SEED)
 
 # split data into train, test, validation datasets
 def split_data():
-    data = []
-    for wav_folder in os.scandir(f'{cut_path}'):
-        data.append(os.path.join(cut_path, os.path.basename(wav_folder.name)))
-    np.random.shuffle(data)  # shuffle data
-    # determine train and test ending index in data
-    train_index_end = int(len(data) * 0.8)  # 0.8
-    test_index_end = int(len(data) * 0.8) + int(len(data) * 0.1)  # 0.8, 0.1
-    # get train and test from data
-    train = data[:train_index_end]
-    test = data[train_index_end:test_index_end]
-    validation = data[test_index_end:]
+    train = []
+    test = []
+    validation = []
+    for sound_folder in os.scandir(f'{cut_path}'):
+        sound_data = []
+        for sound_file in os.scandir(sound_folder):
+            sound_data.append(
+                os.path.join(cut_path, os.path.basename(sound_folder.name), os.path.basename(sound_file.name)))
+        np.random.shuffle(sound_data)  # shuffle data
+
+        # determine train and test ending index in data
+        train_index_end = int(len(sound_data) * 0.8)  # 0.8
+        test_index_end = int(len(sound_data) * 0.8) + int(len(sound_data) * 0.1)  # 0.8, 0.1
+
+        # get train and test from data
+        train = train + sound_data[:train_index_end]
+        test = test + sound_data[train_index_end:test_index_end]
+        validation = validation + sound_data[test_index_end:]
+
     return train, test, validation
 
 
@@ -86,12 +94,10 @@ def get_dataset_sound_filenames(dataset_path):
     sound_paths = []
     dataset = open(dataset_path)
 
-    # get .wav folders from dataset
-    for i, wav_folder_path in enumerate(dataset):
-        wav_folder_path = wav_folder_path.replace('\n', '')
-        # get sounds from all .wav folders
-        for sound_path in os.scandir(os.path.join(wav_folder_path)):
-            sound_paths.append(os.path.join(wav_folder_path, sound_path.name))
+    # get sound .wav files from dataset
+    for i, sound_file_path in enumerate(dataset):
+        sound_file_path = sound_file_path.replace('\n', '')
+        sound_paths.append(sound_file_path)
     dataset.close()
     return sound_paths
 
@@ -221,7 +227,6 @@ def plot_label_distribution(data, histogram_name: str):
     for item in data:
         label_freq[item["label"]] += 1
 
-    print(label_freq)
     plt.figure(figsize=(10, 5))
     plt.bar(label_freq.keys(), label_freq.values(), color='g')
     plt.title(histogram_name)
@@ -232,7 +237,7 @@ def plot_label_distribution(data, histogram_name: str):
 # Balances dataset so that all labels have the same number of data
 # returns balanced dataset
 def balance_dataset(dataset):
-    n_samples = 2000
+    n_samples = 1000
     labels = get_labels()
     retval = []
 
@@ -241,11 +246,14 @@ def balance_dataset(dataset):
         for data in dataset:
             if data["label"] == label:
                 dataset_for_label.append(data)
-        dataset_for_label_resampled = resample(dataset_for_label,
-                                               replace=True,
-                                               n_samples=n_samples,  # len(no_claim),
-                                               random_state=RANDOM_SEED)
-        retval = retval + dataset_for_label_resampled
+
+        if len(dataset_for_label) < n_samples:
+            dataset_for_label = resample(dataset_for_label,
+                                         replace=True,
+                                         n_samples=n_samples,  # len(no_claim),
+                                         random_state=RANDOM_SEED)
+        retval = retval + dataset_for_label
     return retval
 
+# split_and_write_dataset_paths()
 # write_datasets_to_json()

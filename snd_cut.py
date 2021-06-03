@@ -43,8 +43,8 @@ def snd_cut():
             continue
 
         wav = AudioSegment.from_wav(wav_file)
-        file = open(lab_file_name)
-        for i, line in enumerate(file):
+        lab_file = open(lab_file_name)
+        for i, line in enumerate(lab_file):
             # lab file has start,end,sound. extracting this to cut wav files
             line_content = line.split(" ")
             start_time = int(int(line_content[
@@ -71,12 +71,17 @@ def snd_cut():
             silence = AudioSegment.silent(duration=desired_duration - duration)
             wav_single_sound = wav_single_sound + silence  # Adding silence after the audio
 
-            if not os.path.exists(os.path.join(cut_path, wav_file.name)):
-                os.makedirs(os.path.join(cut_path, wav_file.name))
-            # saving sound in directory dedicated for his parent wav
-            filename = f'{i:05d}_{sound}'
-            wav_single_sound.export(os.path.join(cut_path, wav_file.name, f'{filename}.wav'), format="wav")
-        file.close()
+            # windows folder naming is case insensitive
+            # we add '_' prefix to uppercase sound labels so they dont merge with the lowercase sound label folder
+            sound_folder_name = sound if sound.islower() else f'-{sound}'
+
+            if not os.path.exists(os.path.join(cut_path, sound_folder_name)):
+                os.makedirs(os.path.join(cut_path, sound_folder_name))
+            # saving sound wav in directory dedicated for his sound label
+            filename = f'{wav_file.name[:-4]}-{i:05d}_{sound}'
+
+            wav_single_sound.export(os.path.join(cut_path, sound_folder_name, f'{filename}.wav'), format="wav")
+        lab_file.close()
 
 
 # snd_cut()

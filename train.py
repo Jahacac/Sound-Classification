@@ -22,8 +22,8 @@ if not os.path.exists(f'{dp.train_dataset_path_json}') or not os.path.exists(
 model_feature: dp.Feature = dp.Feature.Cepstrum  # choose whether to train model with Cepstrum features or Spectrograms
 
 # dataset distribution: imbalanced or balanced (oversampling/undersampling)
-data_distribution: dp.Dataset_distribution = dp.Dataset_distribution.Balanced
-data_distribution_suffix = "-balanced" if data_distribution == dp.Dataset_distribution.Balanced else "-imbalanced"
+data_distribution: dp.DatasetDistribution = dp.DatasetDistribution.Imbalanced
+data_distribution_suffix = "-some_balanced" if data_distribution == dp.DatasetDistribution.Balanced else "-imbalanced"
 
 # set model name based on feature and database distribution
 model_name = "Spectrogram" if model_feature == dp.Feature.Spectrogram else "Cepstrum"
@@ -50,7 +50,7 @@ def main():
 
     dp.plot_label_distribution(train, "train-imbalanced")
 
-    if data_distribution == dp.Dataset_distribution.Balanced:
+    if data_distribution == dp.DatasetDistribution.Balanced:
         train = dp.balance_dataset(train)
         dp.plot_label_distribution(train, "train-balanced")
 
@@ -170,4 +170,4 @@ def main():
     pass
 
 
-# main()
+#main()
