@@ -135,7 +135,6 @@ def get_feature(sound_path: str, feature_enum: Feature, plot_result: bool):
     result = None
     title = ""
 
-
     if feature_enum == Feature.Cepstrum:
         result = librosa.feature.mfcc(y=y, sr=sr, n_fft=512)
         title = "Cepstrum Features"
@@ -147,7 +146,7 @@ def get_feature(sound_path: str, feature_enum: Feature, plot_result: bool):
     if plot_result:
         fig, ax = plt.subplots()
         img = librosa.display.specshow(result, x_axis='time', y_axis='mel', ax=ax, sr=sr)
-        fig.colorbar(img, ax=ax, format="%+2.f dB")
+        fig.colorbar(img, ax=ax)
         ax.set(title=title)
         plt.savefig(os.path.join(image_path, title))
         plt.show()
