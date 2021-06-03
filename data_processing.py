@@ -237,7 +237,8 @@ def plot_label_distribution(data, histogram_name: str):
 # Balances dataset so that all labels have the same number of data
 # returns balanced dataset
 def balance_dataset(dataset):
-    n_samples = 1000
+    max_samples = 5000
+    min_samples = 2000
     labels = get_labels()
     retval = []
 
@@ -247,11 +248,20 @@ def balance_dataset(dataset):
             if data["label"] == label:
                 dataset_for_label.append(data)
 
-        if len(dataset_for_label) < n_samples:
+        # if sound label has more than 5000 samples, take only 5000
+        if len(dataset_for_label) < min_samples:
             dataset_for_label = resample(dataset_for_label,
                                          replace=True,
-                                         n_samples=n_samples,  # len(no_claim),
+                                         n_samples=min_samples,  # len(no_claim),
                                          random_state=RANDOM_SEED)
+        # if sound label has less than 2000 samples, duplicate random until there are 2000
+
+        if len(dataset_for_label) > max_samples:
+            dataset_for_label = resample(dataset_for_label,
+                                         replace=True,
+                                         n_samples=max_samples,  # len(no_claim),
+                                         random_state=RANDOM_SEED)
+
         retval = retval + dataset_for_label
     return retval
 

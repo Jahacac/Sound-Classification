@@ -9,6 +9,7 @@ from tensorflow.keras import models
 import math
 from keras.utils import to_categorical
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
+import time
 
 if not os.path.exists(f'{dp.train_file_path_txt}') or not os.path.exists(
         f'{dp.test_file_path_txt}') or not os.path.exists(f'{dp.validation_dataset_path_json}'):
@@ -19,10 +20,10 @@ if not os.path.exists(f'{dp.train_dataset_path_json}') or not os.path.exists(
     dp.write_datasets_to_json()
 
 # model feature to train model: Spectrogram or Cepstrum
-model_feature: dp.Feature = dp.Feature.Spectrogram  # choose whether to train model with Cepstrum features or Spectrograms
+model_feature: dp.Feature = dp.Feature.Cepstrum  # choose whether to train model with Cepstrum features or Spectrograms
 
 # dataset distribution: imbalanced or balanced (oversampling/undersampling)
-data_distribution: dp.DatasetDistribution = dp.DatasetDistribution.Balanced
+data_distribution: dp.DatasetDistribution = dp.DatasetDistribution.Imbalanced
 data_distribution_suffix = "-some_balanced" if data_distribution == dp.DatasetDistribution.Balanced else "-imbalanced"
 
 # set model name based on feature and database distribution
@@ -136,6 +137,7 @@ def main():
     model_checkpoint = ModelCheckpoint(f'{os.path.join(dp.trained_model_path, model_name)}.h5', verbose=1,
                                        save_best_only=True)
 
+    start = time.time()
     # Training model
     epochs = 15
     history = model.fit(train_data,
@@ -145,6 +147,8 @@ def main():
                         epochs=epochs,
                         callbacks=[early_stopping, model_checkpoint],
                         verbose=1)
+    end = time.time()
+    print(f"Elapsed time: {model_name} - {end - start}")
 
     # Evaluate model
     print("Val Score: ", model.evaluate(test_data, test_labels))
@@ -154,6 +158,8 @@ def main():
     metrics = history.history
     plt.plot(history.epoch, metrics['loss'], metrics['val_loss'])
     plt.title(title)
+    plt.xlabel('Epoch')
+    plt.ylabel('Amount')
     plt.legend(['Loss', 'Validation Loss'])
     plt.savefig(os.path.join(dp.image_path, title))
     plt.show()
@@ -163,11 +169,12 @@ def main():
     title = f"{model_name} - Training History (Accuracy)"
     plt.plot(history.epoch, metrics['acc'], metrics['val_acc'])
     plt.title(title)
+    plt.xlabel('Epoch')
+    plt.ylabel('Amount')
     plt.legend(['Accuracy', 'Validation Accuracy'])
     plt.savefig(os.path.join(dp.image_path, title))
     plt.show()
 
     pass
 
-
-#main()
+# main()
