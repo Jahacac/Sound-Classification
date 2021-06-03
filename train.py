@@ -18,8 +18,18 @@ if not os.path.exists(f'{dp.train_dataset_path_json}') or not os.path.exists(
         f'{dp.test_dataset_path_json}') or not os.path.exists(f'{dp.validation_dataset_path_json}'):
     dp.write_datasets_to_json()
 
-model_feature: dp.Feature = dp.Feature.Spectrogram  # choose whether to train model with Cepstrum features or Spectrograms
-model_name = "Spectrogram-imbalanced" if model_feature == dp.Feature.Spectrogram else "Cepstrum-imbalanced"
+# model feature to train model: Spectrogram or Cepstrum
+model_feature: dp.Feature = dp.Feature.Cepstrum  # choose whether to train model with Cepstrum features or Spectrograms
+
+# dataset distribution: imbalanced or balanced (oversampling/undersampling)
+data_distribution: dp.Dataset_distribution = dp.Dataset_distribution.Balanced
+data_distribution_suffix = "-balanced" if data_distribution == dp.Dataset_distribution.Balanced else "-imbalanced"
+
+# set model name based on feature and database distribution
+model_name = "Spectrogram" if model_feature == dp.Feature.Spectrogram else "Cepstrum"
+model_name = model_name + data_distribution_suffix
+
+# name of the feature (dataset json key) to train model in
 feature_key = "spectrogram" if model_feature == dp.Feature.Spectrogram else "cepstrum_feature"
 
 
@@ -38,19 +48,23 @@ def main():
     train = dp.load_dataset_from_json(dp.train_dataset_path_json, model_feature)
     test = dp.load_dataset_from_json(dp.test_dataset_path_json, model_feature)
 
+    dp.plot_label_distribution(train, "train-imbalanced")
+
+    if data_distribution == dp.Dataset_distribution.Balanced:
+        train = dp.balance_dataset(train)
+        dp.plot_label_distribution(train, "train-balanced")
+
     shape_x = []
     shape_y = []
-    labels = []
 
     # read labels from file
-    label_file = open(dp.labels_path_txt)
-    labels = label_file.readlines()
-    label_file.close()
+    labels = dp.get_labels()
 
     # Getting shapes from train data
     for data in train:
         shape_x.append(len(data[feature_key]))
         shape_y.append(len(data[feature_key][0]))
+
 
     print(f'ROWS min:{np.min(shape_x)} max:{np.max(shape_x)} average:{np.average(shape_x)}')
     print(f'COLUMN min:{np.min(shape_y)} max:{np.max(shape_y)} average:{np.average(shape_y)}')
@@ -112,6 +126,7 @@ def main():
 
     # Encoding labels
     train_labels = to_categorical(train_labels, len(labels))
+    test_labels = to_categorical(test_labels, len(labels))
 
     # set early stopping criteria
     pat = 2  # this is the number of epochs with no improvment after which the training will stop

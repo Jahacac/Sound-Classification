@@ -7,12 +7,19 @@ import librosa.display
 import json
 from enum import Enum
 import matplotlib.pyplot as plt
+from sklearn.utils import resample
 
 
 # Feature enumerator
 class Feature(Enum):
     Cepstrum = 1
     Spectrogram = 2
+
+
+# Data distribution enumerator
+class Dataset_distribution(Enum):
+    Balanced = 1
+    Imbalanced = 2
 
 
 # files that contain dataset folder paths
@@ -32,7 +39,8 @@ image_path = os.path.join('images')
 trained_model_path = os.path.join('trained_models')
 
 # For replication purposes
-np.random.seed(1)
+RANDOM_SEED = 1
+np.random.seed(RANDOM_SEED)
 
 
 # split data into train, test, validation datasets
@@ -191,5 +199,53 @@ def load_dataset_from_json(dataset_path, model_feature: Feature):
         if delete_feature_key in data:
             del data[delete_feature_key]
     return json_data
+
+
+# get distinct labels
+def get_labels():
+    label_file = open(labels_path_txt)
+    labels = label_file.read()
+    labels = labels.split('\n')
+    label_file.close()
+    return labels
+
+
+# plot label distribution in bar plot
+def plot_label_distribution(data, histogram_name: str):
+    labels = get_labels()
+    label_freq = {}
+
+    for label in labels:
+        label_freq[label] = 0
+
+    for item in data:
+        label_freq[item["label"]] += 1
+
+    print(label_freq)
+    plt.figure(figsize=(10, 5))
+    plt.bar(label_freq.keys(), label_freq.values(), color='g')
+    plt.title(histogram_name)
+    plt.savefig(os.path.join(image_path, histogram_name))
+    plt.show()
+
+
+# Balances dataset so that all labels have the same number of data
+# returns balanced dataset
+def balance_dataset(dataset):
+    n_samples = 2000
+    labels = get_labels()
+    retval = []
+
+    for label in labels:
+        dataset_for_label = []  # all data within dataset that has this label
+        for data in dataset:
+            if data["label"] == label:
+                dataset_for_label.append(data)
+        dataset_for_label_resampled = resample(dataset_for_label,
+                                               replace=True,
+                                               n_samples=n_samples,  # len(no_claim),
+                                               random_state=RANDOM_SEED)
+        retval = retval + dataset_for_label_resampled
+    return retval
 
 # write_datasets_to_json()

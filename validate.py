@@ -43,11 +43,7 @@ def validate_model(model_filename):
         validation_labels.append(data["label"])
 
     # read labels from file
-    label_file = open(dp.labels_path_txt)
-    labels = label_file.read()
-    labels = labels.split('\n')
-    print(labels)
-    label_file.close()
+    labels = dp.get_labels()
 
     # shape data for model
     validation_data = np.array(validation_data)
@@ -70,4 +66,4 @@ def validate_model(model_filename):
     draw_confusion_matrix(validation_labels, validation_preds_labels, labels)
 
 
-# validate_model(tr.model_name)
+validate_model(tr.model_name)
