@@ -12,11 +12,13 @@ from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 import time
 
 if not os.path.exists(f'{dp.train_file_path_txt}') or not os.path.exists(
-        f'{dp.test_file_path_txt}') or not os.path.exists(f'{dp.validation_dataset_path_json}'):
+        f'{dp.test_file_path_txt}') or not os.path.exists(f'{dp.validation_file_path_txt}')\
+        or not os.path.exists(f'{dp.recorded_validation_file_path_txt}'):
     dp.split_and_write_dataset_paths()
 
 if not os.path.exists(f'{dp.train_dataset_path_json}') or not os.path.exists(
-        f'{dp.test_dataset_path_json}') or not os.path.exists(f'{dp.validation_dataset_path_json}'):
+        f'{dp.test_dataset_path_json}') or not os.path.exists(f'{dp.validation_dataset_path_json}')\
+        or not os.path.exists(f'{dp.recorded_validation_dataset_path_json}'):
     dp.write_datasets_to_json()
 
 # model feature to train model: Spectrogram or Cepstrum
@@ -142,7 +144,7 @@ def main():
     epochs = 15
     history = model.fit(train_data,
                         train_labels,
-                        batch_size=80,
+                        batch_size=128,
                         validation_data=(test_data, test_labels),
                         epochs=epochs,
                         callbacks=[early_stopping, model_checkpoint],

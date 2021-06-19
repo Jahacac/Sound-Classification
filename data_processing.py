@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from snd_cut import cut_path
+from snd_cut import cut_path, recorded_cut_wav_path
 import librosa
 import re
 import librosa.display
@@ -26,6 +26,7 @@ class DatasetDistribution(Enum):
 train_file_path_txt = os.path.join('data', 'train_set.txt')
 test_file_path_txt = os.path.join('data', 'test_set.txt')
 validation_file_path_txt = os.path.join('data', 'validation_set.txt')
+recorded_validation_file_path_txt = os.path.join('data', 'recorded_validation_set.txt')
 
 # txt file that contains all labels
 labels_path_txt = os.path.join('data', 'labels.txt')
@@ -34,6 +35,7 @@ labels_path_txt = os.path.join('data', 'labels.txt')
 train_dataset_path_json = os.path.join('data', 'train_dataset.json')
 test_dataset_path_json = os.path.join('data', 'test_dataset.json')
 validation_dataset_path_json = os.path.join('data', 'validation_dataset.json')
+recorded_validation_dataset_path_json = os.path.join('data', 'recorded_validation_dataset.json')
 
 image_path = os.path.join('images')
 trained_model_path = os.path.join('trained_models')
@@ -48,6 +50,7 @@ def split_data():
     train = []
     test = []
     validation = []
+    recorded_validation = []
     for sound_folder in os.scandir(f'{cut_path}'):
         sound_data = []
         for sound_file in os.scandir(sound_folder):
@@ -64,11 +67,14 @@ def split_data():
         test = test + sound_data[train_index_end:test_index_end]
         validation = validation + sound_data[test_index_end:]
 
-    return train, test, validation
+    for sound_file in os.scandir(f'{recorded_cut_wav_path}'):
+        recorded_validation.append(os.path.join(recorded_cut_wav_path, os.path.basename(sound_file.name)))
+
+    return train, test, validation, recorded_validation
 
 
 # write train, test, validation datasets to txt files
-def write_split_data(train, test, validation):
+def write_split_data(train, test, validation, recorded_validation):
     train_file = open(train_file_path_txt, "w")
     train_file.write("\n".join(train))
     train_file.close()
@@ -80,13 +86,17 @@ def write_split_data(train, test, validation):
     validation_file = open(validation_file_path_txt, "w")
     validation_file.write("\n".join(validation))
     validation_file.close()
+
+    recorded_validation_file = open(recorded_validation_file_path_txt, "w")
+    recorded_validation_file.write("\n".join(recorded_validation))
+    recorded_validation_file.close()
     return
 
 
 # extract train, test, validation dataset paths and write to file
 def split_and_write_dataset_paths():
-    train_dataset, test_dataset, validation_dataset = split_data()
-    write_split_data(train_dataset, test_dataset, validation_dataset)
+    train_dataset, test_dataset, validation_dataset, recorded_validation = split_data()
+    write_split_data(train_dataset, test_dataset, validation_dataset, recorded_validation)
 
 
 # get sound file names within dataset paths
@@ -178,6 +188,13 @@ def write_datasets_to_json():
     validation_dataset_file.close()
     print('validation_dataset_file finished!')
 
+    recorded_validation_data = get_dataset(recorded_validation_file_path_txt)
+    recorded_validation = json.dumps(recorded_validation_data)
+    recorded_validation_dataset_file = open(recorded_validation_dataset_path_json, 'w')
+    recorded_validation_dataset_file.write(recorded_validation)
+    recorded_validation_dataset_file.close()
+    print('recorded_validation_dataset_file finished!')
+
     # extract all labels and write distinct values
     labels = []
     for data in train_data:
@@ -185,6 +202,8 @@ def write_datasets_to_json():
     for data in test_data:
         labels.append(data["label"])
     for data in validation_data:
+        labels.append(data["label"])
+    for data in recorded_validation_data:
         labels.append(data["label"])
 
     labels_file = open(labels_path_txt, 'w')
@@ -262,8 +281,6 @@ def balance_dataset(dataset):
                                          n_samples=max_samples,  # len(no_claim),
                                          random_state=RANDOM_SEED)
 
-        retval = retval + dataset_for_label
-    return retval
 
-# split_and_write_dataset_paths()
-# write_datasets_to_json()
+#split_and_write_dataset_paths()
+#write_datasets_to_json()

@@ -21,7 +21,8 @@ def prep_submissions(preds_array):
 def draw_confusion_matrix(true, preds, labels):
     title = f"{tr.model_name} - Confusion Matrix"
     plt.figure(figsize=(20, 20))
-    conf_matx = confusion_matrix(true, preds)
+    test = tr.shape_labels(labels, labels)
+    conf_matx = confusion_matrix(true, preds, labels=test)
     sns.heatmap(conf_matx, annot=True, annot_kws={"size": 12}, fmt='g', cbar=False, cmap="viridis", xticklabels=labels, yticklabels=labels)
     plt.xlabel('Prediction')
     plt.ylabel('Label')
@@ -32,7 +33,7 @@ def draw_confusion_matrix(true, preds, labels):
 
 def validate_model(model_filename):
     # load validation dataset
-    validation = dp.load_dataset_from_json(dp.validation_dataset_path_json, tr.model_feature)
+    validation = dp.load_dataset_from_json(dp.recorded_validation_dataset_path_json, tr.model_feature)
     validation_data = []
     validation_labels = []
 
@@ -45,6 +46,9 @@ def validate_model(model_filename):
 
     # read labels from file
     labels = dp.get_labels()
+
+    print(sorted(validation_labels))
+    print(sorted(labels))
 
     # shape data for model
     validation_data = np.array(validation_data)
@@ -67,4 +71,4 @@ def validate_model(model_filename):
     draw_confusion_matrix(validation_labels, validation_preds_labels, labels)
 
 
-#validate_model(tr.model_name)
+validate_model(tr.model_name)

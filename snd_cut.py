@@ -3,20 +3,47 @@ import os
 import shutil
 import numpy as np
 
+# wav paths are cut according to lab paths and saved to cut_path
 wav_path = os.path.join('data', 'original', 'wav')
 lab_path = os.path.join('data', 'original', 'lab')
 cut_path = os.path.join('data', 'cut')
+
+# recorded wav paths are sounds that are cut according to 'desired duration' and saved to recorded cut wav path
+recorded_wav_path = os.path.join('data', 'recorded-sounds')
+recorded_cut_wav_path = os.path.join('data', 'recorded-sounds-cut')
+
 sounds_to_ignore = ['buka', 'greska', 'uzdah']
 
 
+# Cuts the wav file to desired duration and returns
+# if file is longer than desired duration, it is cut
+# if file is shorter than desired duration, silence is added
+def cut_to_desired_duration(wav, start_time, end_time, desired_duration):
+    duration = end_time - start_time
+    if duration > desired_duration:
+        end_time = start_time + desired_duration
+        duration = end_time - start_time
+    wav_single_sound = wav[start_time:end_time]
+
+    silence = AudioSegment.silent(duration=desired_duration - duration)
+    wav_single_sound = wav_single_sound + silence  # Adding silence after the audio
+    return wav_single_sound
+
+
 def snd_cut():
-    # Delete folder containing sound cuts
+    # Delete folders containing sound cuts
     if os.path.exists(f'{cut_path}'):
         shutil.rmtree(f'{cut_path}')
 
+    if os.path.exists(f'{recorded_cut_wav_path}'):
+        shutil.rmtree(f'{recorded_cut_wav_path}')
+
     os.makedirs(f'{cut_path}')
+    os.makedirs(f'{recorded_cut_wav_path}')
+
     # Extract wav and lab files
     wav_files = os.scandir(f'{wav_path}')
+    recorded_sound_files = os.scandir(f'{recorded_wav_path}')
     desired_duration = 0
 
     # calculate desired_duration based on average/max? sound lengths
@@ -50,7 +77,6 @@ def snd_cut():
             start_time = int(int(line_content[
                                      0]) / 10 ** 4)  # time is in microseconds*0.1, we convert this to miliseconds (required for AudioSegment)
             end_time = int(int(line_content[1]) / 10 ** 4)
-            duration = end_time - start_time  # duration of audio file in ms
 
             # if length is 0, then continue (we work with int, not float)
             if start_time == end_time:
@@ -63,13 +89,7 @@ def snd_cut():
                 continue
 
             # cutting wav file
-            if duration > desired_duration:
-                end_time = start_time + desired_duration
-                duration = end_time - start_time
-            wav_single_sound = wav[start_time:end_time]
-
-            silence = AudioSegment.silent(duration=desired_duration - duration)
-            wav_single_sound = wav_single_sound + silence  # Adding silence after the audio
+            wav_single_sound = cut_to_desired_duration(wav, start_time, end_time, desired_duration)
 
             # windows folder naming is case insensitive
             # we add '_' prefix to uppercase sound labels so they dont merge with the lowercase sound label folder
@@ -82,6 +102,15 @@ def snd_cut():
 
             wav_single_sound.export(os.path.join(cut_path, sound_folder_name, f'{filename}.wav'), format="wav")
         lab_file.close()
+
+    # extracting sounds from recorded .wav files
+    for recorded_wav_file in recorded_sound_files:
+        recorded_wav = AudioSegment.from_wav(recorded_wav_file)
+        start_time = 0
+        end_time = np.floor(recorded_wav.duration_seconds * 1000)
+        recorded_cut_wav = cut_to_desired_duration(recorded_wav, start_time, end_time, desired_duration)
+
+        recorded_cut_wav.export(os.path.join(recorded_cut_wav_path, recorded_wav_file.name), format="wav")
 
 
 # snd_cut()
