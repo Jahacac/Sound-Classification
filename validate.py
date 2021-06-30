@@ -7,8 +7,10 @@ from sklearn.metrics import classification_report
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
-from keras.models import load_model
+from keras.models import load_model # tensorflow.keras umjesto keras.models
 
+# dataset path to use for validation
+validate_dataset_path = dp.recorded_validation_dataset_path_json
 
 # function for converting predictions to labels
 def prep_submissions(preds_array):
@@ -33,7 +35,7 @@ def draw_confusion_matrix(true, preds, labels):
 
 def validate_model(model_filename):
     # load validation dataset
-    validation = dp.load_dataset_from_json(dp.recorded_validation_dataset_path_json, tr.model_feature)
+    validation = dp.load_dataset_from_json(validate_dataset_path, tr.model_feature)
     validation_data = []
     validation_labels = []
 

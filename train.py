@@ -7,7 +7,7 @@ import pandas as pd
 from tensorflow.keras import layers
 from tensorflow.keras import models
 import math
-from keras.utils import to_categorical
+from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 import time
 
